@@ -4,58 +4,17 @@ from tkinter import messagebox
 from sql_class import Consultas
 
 class Clientes:
-    def __init__(self, notebook, select_clientes):
+    def __init__(self, notebook):
         self.sqls = Consultas()
         self.table = None
         self.clientes_frame = None
-        self.entry_values = []
-        self.tabla_encabezados = ["Clave", "Nombre", "Teléfono", "Correo", "Direccion"]
-        self.select_clientes = select_clientes
+        self.form_insert = []
+        self.form_edit = []
+        self.encabezados = ["Clave", "Nombre", "Teléfono", "Correo", "Direccion"]
+        self.lista_clientes = self.sqls.select(self.sqls.table_clientes)
         self.crear_seccion_clientes(notebook)
 
 
-    #elimina el registro seleccionado
-    def delPersona(self):
-        selected_item = self.table.focus()
-        if selected_item:
-            values = self.table.item(selected_item, 'values')
-            celda = values[0]
-            print (celda)
-    
-    #valida si el algun input esta vacio
-    def isEmpty(self):
-        for entry in self.entry_values:
-            value = entry.get()
-            if not value or value.isspace():
-                return True  
-        return False  
-
-    #inserta un nuevo registro en la tabla
-    def insert(self):
-        values = []
-        for entry in self.entry_values:
-            value = entry.get()
-            value = value.strip()
-            values.append(value)
-
-        if self.isEmpty():
-            messagebox.showinfo("Mensaje", "No puede haber campos vacios")
-        else:
-            if self.sqls.registroExistente(self.sqls.table_clientes, self.sqls.pers_cond, values[0] ):
-                messagebox.showinfo("Importante", "registro existente!")
-            else: 
-                self.sqls.insertar_persona(values)
-                self.refrescar_tabla(self.table, self.sqls.select('gente'))
-                messagebox.showinfo("Mensaje", "registro agregado!") 
-            
-
-    #actualiza la tabla con un select
-    def refrescar_tabla(self, tree, tabla_obj):
-        tree.delete(*tree.get_children())
-        for row in tabla_obj:
-            tree.insert('', 'end', values=row)
-
-    
     def crear_formulario(self, panel, labels):
         frame_formulario = ttk.Frame(panel)
         frame_formulario.pack(padx=20, pady=20)
@@ -65,9 +24,9 @@ class Clientes:
             label.grid(row=i, column=0)
             entry = tk.Entry(frame_formulario)
             entry.grid(row=i, column=1)
-            self.entry_values.append(entry) 
+            self.form_insert.append(entry) 
 
-        boton_formulario = tk.Button(frame_formulario, text="Agregar", command=self.insert)
+        boton_formulario = tk.Button(frame_formulario, text="Agregar", command=self.insertar_cliente)
         boton_formulario.grid(row=len(labels) + 1, columnspan=2, padx=10, pady=10)
     
 
@@ -85,23 +44,107 @@ class Clientes:
         frame_botones_tabla = ttk.Frame(frame_tabla)
         frame_botones_tabla.pack(padx=20, pady=20)
 
-        boton1_tabla = tk.Button(frame_botones_tabla, text="Editar", width=40)
+        boton1_tabla = tk.Button(frame_botones_tabla, text="Editar", width=40, command=self.abrir_ventana_edicion)
         boton1_tabla.pack(side=tk.LEFT, padx=10, pady=10)
 
-        boton2_tabla = tk.Button(frame_botones_tabla, text="Eliminar", width=40, command=self.delPersona)
+        boton2_tabla = tk.Button(frame_botones_tabla, text="Eliminar", width=40, command=self.del_persona)
         boton2_tabla.pack(side=tk.LEFT, padx=10, pady=10)
 
     def crear_seccion_clientes(self, notebook):
         self.clientes_frame = ttk.Frame(notebook)
         notebook.add(self.clientes_frame, text="Clientes")
 
-        self.crear_formulario(self.clientes_frame, self.tabla_encabezados)
-        self.crear_tabla(self.clientes_frame, self.tabla_encabezados, self.select_clientes)
+        self.crear_formulario(self.clientes_frame, self.encabezados)
+        self.crear_tabla(self.clientes_frame, self.encabezados, self.lista_clientes)
 
-        #boton_clientes = tk.Button(self.clientes_frame, text="Clientes", command=lambda: self.cambiar_seccion(notebook, "Clientes"))
-        #boton_clientes.pack()
+    def abrir_ventana_edicion(self):
+            selected_item = self.table.focus()
+            if selected_item:
+                values = self.table.item(selected_item, 'values')
+                self.editar_cliente(values)
+            else:
+                messagebox.showinfo("Mensaje", "Seleccione un registro para editar")
+    
+    def editar_cliente(self, values):
+        self.form_edit.clear()
+        edit_window = tk.Toplevel()
+        edit_window.title("Editar cliente")
 
-    def cambiar_seccion(self, notebook, seccion):
-        for index, tab in enumerate(notebook.tabs()):
-            if notebook.tab(tab, "text") == seccion:
-                notebook.select(index)
+        frame_editar = ttk.Frame(edit_window)
+        frame_editar.pack(padx=20, pady=20)
+
+        for i, label_text in enumerate(self.encabezados):
+            label = tk.Label(frame_editar, text=label_text + ":")
+            label.grid(row=i, column=0)
+            entry = tk.Entry(frame_editar)
+            entry.grid(row=i, column=1)
+            entry.insert(tk.END, values[i])  
+            self.form_edit.append(entry)
+
+        boton_actualizar = tk.Button(frame_editar, text="Actualizar", command=self.actualizar_cliente)
+        boton_actualizar.grid(row=len(self.encabezados) + 1, columnspan=2, padx=10, pady=10)
+
+
+    #inserta un nuevo registro en la tabla
+    def insertar_cliente(self):
+        values = []
+        for entry in self.form_insert:
+            value = entry.get()
+            value = value.strip()
+            values.append(value)
+
+        if self.isEmpty(self.form_insert):
+            messagebox.showinfo("Mensaje", "No puede haber campos vacios")
+        else:
+            if self.sqls.registroExistente(self.sqls.table_clientes, self.sqls.pers_cond, values[0] ):
+                messagebox.showinfo("Importante", "registro existente!")
+                self.limpiar_entradas(self.form_insert)
+            else: 
+                self.sqls.insertar(self.sqls.table_clientes, self.sqls.pers_cols, values)
+                self.refrescar_tabla(self.table, self.sqls.select('gente'))
+                messagebox.showinfo("Mensaje", "registro agregado!")
+
+    def actualizar_cliente(self):
+        new_values = []
+        for entry in self.form_edit:
+            value = entry.get()
+            value = value.strip()
+            new_values.append(value)
+
+        if self.sqls.registroExistente(self.sqls.table_clientes, self.sqls.pers_cond, new_values[0]):
+            if self.isEmpty(self.form_edit):
+                messagebox.showinfo("Mensaje", "No puede haber campos vacios")
+            else:
+                self.sqls.update(self.sqls.table_clientes, self.sqls.pers_cols, new_values, self.sqls.pers_cond, new_values[0] )
+                self.refrescar_tabla(self.table, self.sqls.select(self.sqls.table_clientes))
+                messagebox.showinfo("Mensaje", "registro Actualizado!")
+        else: messagebox.showinfo("Error", "Persona no encontrada en el sistema!")            
+
+    #elimina el registro seleccionado
+    def del_persona(self):
+        selected_item = self.table.focus()
+        if selected_item:
+            values = self.table.item(selected_item, 'values')
+            celda = values[0]
+            self.sqls.eliminar(self.sqls.table_clientes, self.sqls.pers_cond, celda)
+            self.refrescar_tabla(self.table, self.sqls.select(self.sqls.table_clientes))
+            messagebox.showinfo("Mensaje", "Registro eliminado")
+        else: messagebox.showinfo("Mensaje", "Seleccione el registro a eliminar")
+
+    #actualiza la tabla con un select
+    def refrescar_tabla(self, tree, tabla_obj):
+        tree.delete(*tree.get_children())
+        for row in tabla_obj:
+            tree.insert('', 'end', values=row)
+
+    #valida si el algun input esta vacio
+    def isEmpty(self, formulario):
+        for entry in formulario:
+            value = entry.get()
+            if not value or value.isspace():
+                return True  
+        return False  
+
+    def limpiar_entradas(self, entry_list):
+        for entry in entry_list:
+            entry.delete(0, tk.END)
