@@ -58,12 +58,12 @@ class Clientes:
         self.crear_tabla(self.clientes_frame, self.encabezados, self.lista_clientes)
 
     def abrir_ventana_edicion(self):
-            selected_item = self.table.focus()
-            if selected_item:
-                values = self.table.item(selected_item, 'values')
-                self.editar_cliente(values)
-            else:
-                messagebox.showinfo("Mensaje", "Seleccione un registro para editar")
+        selected_item = self.table.focus()
+        if selected_item:
+            values = self.table.item(selected_item, 'values')
+            self.editar_cliente(values)
+        else:
+            messagebox.showinfo("Mensaje", "Seleccione un registro para editar")
     
     def editar_cliente(self, values):
         self.form_edit.clear()
@@ -98,10 +98,10 @@ class Clientes:
         else:
             if self.sqls.registroExistente(self.sqls.table_clientes, self.sqls.pers_cond, values[0] ):
                 messagebox.showinfo("Importante", "registro existente!")
-                self.limpiar_entradas(self.form_insert)
             else: 
                 self.sqls.insertar(self.sqls.table_clientes, self.sqls.pers_cols, values)
                 self.refrescar_tabla(self.table, self.sqls.select('gente'))
+                self.limpiar_entradas(self.form_insert)
                 messagebox.showinfo("Mensaje", "registro agregado!")
 
     def actualizar_cliente(self):

@@ -8,14 +8,21 @@ class Consultas:
         self.pers_cond = 'clave'
         self.pers_cols = ["clave", "nombre", "celular", "email", "direccion"]
         self.table_citas = 'citas'
+        self.cita_cond = 'persona'
+        self.cita_cols = ["dia", "hora", "motivo", "persona"]
 
     def crear_bd(self):
         nombre_bd = 'mis_citas.db'
 
         if os.path.isfile(nombre_bd):
             print(f"El archivo {nombre_bd} existe.")
+            
         else:
-            print(f"El archivo {nombre_bd} no existe o no es un archivo regular.")
+            query = "CREATE TABLE gente (clave int,nombre char(100),celular char(20),email char(100),direccion text)"
+            self.cmd.execute(query)
+            query = "CREATE TABLE citas (dia date, hora time, motivo text,persona int)"
+            self.cmd.execute(query)
+            self.con.commit()
 
     def select(self, tabla):
         query = f'SELECT * FROM {tabla}'
